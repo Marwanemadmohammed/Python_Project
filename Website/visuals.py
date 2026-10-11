@@ -84,41 +84,71 @@ def create_violin_plot(selected_features_df, selected_features):
     fig.delaxes(axes[5])
 
     plt.tight_layout()
-    plt.show()
     return fig
 
 # heat map
 #================
+
 def create_heat_map(selected_features_df):
-    
-    selected_features_df["diagnosis"] = selected_features_df["diagnosis"].map({
-    "Benign": 0,
-    "Malignant": 1
+    plot_data = selected_features_df.copy()
+
+    plot_data["diagnosis"] = plot_data["diagnosis"].map({
+        "Benign": 0,
+        "Malignant": 1
     })
 
+    fig, ax = plt.subplots(figsize=(8, 6))
 
-    
-    fig , axes = plt.subplots(figsize = (6,6))
-    sns.heatmap(data = selected_features_df.corr() , vmin = -1 , vmax = 1 , center = 0,annot = True)
+    sns.heatmap(
+        plot_data.corr(numeric_only=True),
+        vmin=-1,
+        vmax=1,
+        center=0,
+        annot=True,
+        fmt=".2f",
+        ax=ax
+    )
 
+    fig.tight_layout()
     return fig
 
 
 
+
+
 def create_bar_plot(selected_features_df, selected_features):
-    corr = selected_features_df[selected_features + ['diagnosis']].corr()['diagnosis']
-    corr = corr.drop('diagnosis').sort_values(ascending=False)
+    corr = (
+        selected_features_df[selected_features + ["diagnosis"]]
+        .copy()
+    )
 
-    plt.figure(figsize=(10, 7))
-    sns.barplot(x=corr.index, y=corr.values)
-    for i, value in enumerate(corr.values):
-        plt.text(i,value + 0.02,f'{value:.2f}',ha='center')
-        
-    plt.title('Correlation of Top 5 Features with Diagnosis')
-    plt.xlabel('Features')
-    plt.ylabel('Correlation')
-    plt.xticks(rotation=45)
-    
-    return plt
+    corr["diagnosis"] = corr["diagnosis"].map({
+        "Benign": 0,
+        "Malignant": 1
+    })
 
+    correlations = (
+        corr.corr(numeric_only=True)["diagnosis"]
+        .drop("diagnosis")
+        .sort_values(ascending=False)
+    )
 
+    fig, ax = plt.subplots(figsize=(10, 7))
+
+    sns.barplot(
+        x=correlations.index,
+        y=correlations.values,
+        ax=ax
+    )
+
+    for i, value in enumerate(correlations.values):
+        offset = 0.02 if value >= 0 else -0.04
+        ax.text(i, value + offset, f"{value:.2f}", ha="center")
+
+    ax.set_title("Correlation of Top 5 Features with Diagnosis")
+    ax.set_xlabel("Features")
+    ax.set_ylabel("Correlation")
+    ax.tick_params(axis="x", rotation=45)
+
+    fig.tight_layout()
+    return fig
